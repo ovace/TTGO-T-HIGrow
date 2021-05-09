@@ -1,5 +1,26 @@
+#include "save-configuration.h"
+#include "user-variables.h"
+
+#include <Arduino.h>
+#include <WiFi.h>
+#include <NTPClient.h>
+#include <ArduinoJson.h>
+#include <SPIFFS.h>
+#include <PubSubClient.h>
+
+#include "getCfg.h"
+#include "config.h"
+#include "connect-to-network.h"
+#include "file-management.h"
+#include "go-to-deep-sleep.h"
+
+// mqtt constants
+WiFiClient wifiClient;
+PubSubClient mqttClient(wifiClient);
+
+
 // Allocate a  JsonDocument
-void saveConfiguration(const Config & config) {
+void saveConfiguration(const SensorData & sensordata) {
 
   //  Serial.println(WiFi.macAddress());
   //  String stringMAC = WiFi.macAddress();
@@ -20,34 +41,44 @@ void saveConfiguration(const Config & config) {
     }
   }
   Serial.println("chipId " + chipId);
-  const String topicStr = device_name + "/" + chipId;
+  const String topicStr = "esp/" + config.devicecfg.name + "/" + chipId;
   const char* topic = topicStr.c_str();
-  Serial.println(topic);
-  Serial.println(ssid);
+  if (_DEBUG_) {
+    Serial.println(topic);
+    Serial.println(ssid);
+  };
+
   StaticJsonDocument<1024> doc;
   // Set the values in the document
   // Device changes according to device placement
-  JsonObject root = doc.to<JsonObject>();
-
-  JsonObject plant = root.createNestedObject("plant");
-  plant[device_name] = chipId;
-  plant["sensorname"] = plant_name;
-  plant["date"] = config.date;
-  plant["time"] = config.time;
-  plant["sleep5Count"] = config.sleep5no;
-  plant["bootCount"] = config.bootno;
-  plant["lux"] = config.lux;
-  plant["temp"] = config.temp;
-  plant["humid"] = config.humid;
-  plant["soil"] = config.soil;
-  plant["salt"] = config.salt;
-  plant["saltadvice"] = config.saltadvice;
-  plant["bat"] = config.bat;
-  plant["batcharge"] = config.batcharge;
-  plant["battvolt"] = config.batvolt;
-  plant["battvoltage"] = config.batvoltage;
-  plant["wifissid"] = WiFi.SSID();
-  plant["rel"] = config.rel;
+  JsonObject root = doc.to<JsonObject>();  
+  JsonObject garden = root.createNestedObject("device_placement");
+  garden["device_placement"] = config.devicecfg.location;
+  JsonObject deviceStats = doc.createNestedObject("deviceStats");
+  deviceStats[config.devicecfg.model] = chipId;
+  deviceStats["sensorname"] = config.devicecfg.name;
+  deviceStats["date"] = sensordata.date;
+  deviceStats["time"] = sensordata.time;
+  deviceStats["TZ"] = sensordata.TZ;
+  deviceStats["DST"] = sensordata.DST;
+  deviceStats["upTime"] = sensordata.uptime;
+  deviceStats["sleep5Count"] = sensordata.sleep5no;
+  deviceStats["bootCount"] = sensordata.bootno;
+  JsonObject sensorReads = doc.createNestedObject("sensorReads");
+  sensorReads["lux"] = sensordata.lux;
+  sensorReads["temp"] = sensordata.temp;
+  sensorReads["humid"] = sensordata.humid;
+  sensorReads["soil"] = sensordata.soil;
+  sensorReads["salt"] = sensordata.salt;
+  sensorReads["saltadvice"] = sensordata.saltadvice;
+  sensorReads["bat"] = sensordata.bat;
+  sensorReads["batcharge"] = sensordata.batcharge;
+  sensorReads["battvolt"] = sensordata.batvolt;
+  sensorReads["battvoltage"] = sensordata.batvoltage;
+  sensorReads["wifissid"] = WiFi.SSID();
+  JsonObject codeStats = doc.createNestedObject("codeStats");
+  codeStats["fw_rel"] = sensordata.rel;
+  codeStats["conf_rel"] = config.cfg_rel;
 
   // Send to mqtt
   char buffer[1024];

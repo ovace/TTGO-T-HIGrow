@@ -1,3 +1,6 @@
+#include "get-string-value.h"
+#include "user-variables.h"
+
 String getValue(String data, char separator, int index)
 {
   int found = 0;

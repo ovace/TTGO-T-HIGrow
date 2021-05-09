@@ -1,3 +1,6 @@
+#include "file-management.h"
+#include "user-variables.h"
+
 void writeFile(fs::FS & fs, const char * path, const char * message) {
   Serial.printf("Writing file: %s\r\n", path);
 

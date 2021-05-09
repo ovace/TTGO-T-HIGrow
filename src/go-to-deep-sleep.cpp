@@ -1,3 +1,25 @@
+
+#include "go-to-deep-sleep.h"
+#include "user-variables.h"
+
+#include <WiFi.h>
+#include <NTPClient.h>
+#include <SPIFFS.h>
+
+
+#include "connect-to-network.h"
+#include "file-management.h"
+#include "driver/adc.h"
+#include "config.h"
+#include "getCfg.h"
+#include "esp_wifi.h"
+#include <esp_bt.h>
+
+
+// Reboot counters
+RTC_DATA_ATTR int sleep5no = 0;
+
+
 void goToDeepSleep()
 {
   Serial.print("Going to sleep... ");

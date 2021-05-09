@@ -1,4 +1,31 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include <BH1750.h>
+#include <DHT.h>
+#include <Adafruit_BME280.h>
+
+
+#include "driver/adc.h"
+#include "getCfg.h"
+#include <esp_wifi.h>
+#include <esp_bt.h>
+
+
+
+#include "read-sensors.h"
+
+//const int led = 13;  Red indicator LED -- disable to save battery power
+
+
+#define BAT_ADC             33
+#define SALT_PIN            34
+#define SOIL_PIN            32
+#define BOOT_PIN            0
+
+
 // READ Sensors
+
+SensorData sensordata;
 
 // READ Salt
 // I am not quite sure how to read and use this number. I know that when put in water wich a DH value of 26, it gives a high number, but what it is and how to use ??????
@@ -41,9 +68,9 @@ float readBattery()
   uint16_t volt = analogRead(BAT_ADC);
   Serial.print("Volt direct ");
   Serial.println(volt);
-  config.batvolt = volt;
+  sensordata.batvolt = volt;
   float battery_voltage = ((float)volt / 4095.0) * 2.0 * 3.3 * (vref) / 1000;
-  config.batvoltage = battery_voltage;
+  sensordata.batvoltage = battery_voltage;
   Serial.print("Battery Voltage: ");
   Serial.println(battery_voltage);
   battery_voltage = battery_voltage * 100;

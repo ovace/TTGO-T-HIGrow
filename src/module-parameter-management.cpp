@@ -1,3 +1,25 @@
+#include <Arduino.h>
+// #include <Wire.h>
+// #include <BH1750.h>
+// #include <DHT.h>
+// #include <Adafruit_BME280.h>
+// #include <WiFi.h>
+// #include <NTPClient.h>
+#include <ArduinoJson.h>
+#include <SPIFFS.h>
+// #include <FS.h>
+
+#include "getCfg.h"
+#include "module-parameter-management.h"
+#include "user-variables.h"
+#include "file-management.h"
+#include "get-string-value.h"
+
+MPM::MPM() { //Class constructor
+};
+
+void MPM::setup() {
+
   // Initiate SPIFFS and Mount file system
   if (!SPIFFS.begin(true)) {
     Serial.println("An Error has occurred while mounting SPIFFS");
@@ -58,8 +80,10 @@
     readString = "";
   }
 
-  pinMode(led, OUTPUT);
-  digitalWrite(led, 0);
+  // pinMode(led, OUTPUT);
+  // digitalWrite(led, 0);
   if (logging) {
     writeFile(SPIFFS, "/error.log", "Before Start WIFI \n");
   }
+  return;
+}
