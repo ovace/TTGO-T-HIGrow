@@ -17,7 +17,9 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org");
 
 espTime::espTime() { //Class constructor
+};
 
+espTime::~espTime() { //Class destructor
 };
 
 void espTime::setup() {
@@ -40,10 +42,8 @@ String espTime::getCurTimestamp () {
 
   String formattedTime = timeClient.getFormattedTime();
 
-  int currentHour = timeClient.getHours();
-  
-  int currentMinute = timeClient.getMinutes();
-     
+  int currentHour = timeClient.getHours();  
+  int currentMinute = timeClient.getMinutes();     
   int currentSecond = timeClient.getSeconds();
   
   String curTimeStamp = String(currentHour) + ":" + String(currentMinute) +  ":" + String(currentSecond);
@@ -65,10 +65,8 @@ String espTime::getCurDate () {
   //Get a time structure
   struct tm *ptm = gmtime ((time_t *)&epochTime); 
 
-  int monthDay = ptm->tm_mday;
-  
-  int currentMonth = ptm->tm_mon+1;
-  
+  int monthDay = ptm->tm_mday;  
+  int currentMonth = ptm->tm_mon+1;  
   int currentYear = ptm->tm_year+1900;
   
 
@@ -84,12 +82,12 @@ void espTime::setClock() {
 
   Serial.print(F("Waiting for NTP time sync: "));
   time_t now = time(nullptr);
-  while (now < 8 * 3600 * 2) {
-    yield();
-    delay(500);
-    Serial.print(F("."));
-    now = time(nullptr);
-  }
+  // while (now < 8 * 3600 * 2) {
+  //   yield();
+  //   delay(500);
+  //   Serial.print(F("."));
+  //   now = time(nullptr);
+  // }
 
   Serial.println(F(""));
   struct tm timeinfo;

@@ -11,7 +11,7 @@
     class espTime {
         public:
             espTime();
-            //~myTime();
+            ~espTime();
             static String getCurTimestamp(); 
             static String getCurDate();
             static void setClock();           
