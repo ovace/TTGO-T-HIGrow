@@ -12,7 +12,7 @@ String formattedDate;
 String dayStamp;
 String timeStamp1;
 
-const int gmtOffset = -6;
+const int gmtOffset = 0;
 const long int gmtOffset_sec = 60*60*gmtOffset;
 const char* ntpSvr = config.ntpcfg.Server.c_str();
 int ntpRefreshFreq = config.ntpcfg.refrehFreq;
@@ -127,13 +127,13 @@ String timeMGMT::getCurTimestamp () {
     Serial.println(gmtOffset);
   };
 
-  if (timeMGMT::chkDST() ) {
-    dstOffset = 60*60;    
-  } else {
-    dstOffset = 0;
-  };
+  // if (timeMGMT::chkDST() ) {
+  //   dstOffset = 60*60;    
+  // } else {
+  //   dstOffset = 0;
+  // };
 
-  // configTime(gmtOffset_sec, dstOffset_sec, config.ntpcfg.Server.c_str(), "time.nist.gov");  // CT  
+  configTime(gmtOffset_sec, dstOffset_sec, config.ntpcfg.Server.c_str(), "time.nist.gov");  // CT  
 
   time_t now = time(nullptr);
   struct tm* timeinfo;
@@ -161,11 +161,11 @@ String timeMGMT::getCurDate () {
     Serial.println(gmtOffset);
   };
 
-  if (timeMGMT::chkDST() ) {
-    dstOffset = -1;    
-  } else {
-    dstOffset = 0;
-  };
+  // if (timeMGMT::chkDST() ) {
+  //   dstOffset = -1;    
+  // } else {
+  //   dstOffset = 0;
+  // };
 
   // configTime(gmtOffset_sec, dstOffset_sec, config.ntpcfg.Server.c_str(), "time.nist.gov");  // CT  
 
@@ -204,16 +204,26 @@ String timeMGMT::getCurDate () {
 
 // Set time via NTP, as required for x.509 validation
 void timeMGMT::setClock() {
+
+  if (_DEBUG_) {
+    Serial.print(F("NTP Server: "));
+    Serial.println(config.ntpcfg.Server.c_str());
+  };
+  
   configTime(gmtOffset_sec, dstOffset_sec, config.ntpcfg.Server.c_str(), "time.nist.gov");  // CT  
 
   Serial.print(F("Waiting for NTP time sync: "));
   time_t now = time(nullptr);
-  while (now < 8 * 3600 * 2) {
-    yield();
-    delay(500);
-    Serial.print(F("."));
-    now = time(nullptr);
-  }
+  if (_DEBUG_) {
+    Serial.print(F("Now: "));
+    Serial.println(now);
+  };
+  // while (now < 8 * 3600 * 2) {
+  //   yield();
+  //   delay(500);
+  //   Serial.print(F("."));
+  //   now = time(nullptr);
+  // }
 
   Serial.println(F(""));
   struct tm * timeinfo;
