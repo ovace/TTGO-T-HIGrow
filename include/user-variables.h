@@ -29,15 +29,15 @@ int fertil_high = 351;
 
 // Give the sensor a plant name, change to true, upload sketch and then revert to false
 const bool update_plant_name = false;
-String plant_name = "My_Test";
+String plant_name = "Mogra";
 
 
 // define your SSID's, and remember to fill out variable ssidArrNo with the number of your SSID's
-String ssidArr[] = {"Enterprise-pro", "Enterprise_EXT", "Enterprise_EXTN", "Enterprise" };
+String ssidArr[] = {"jasoos" };
 int ssidArrNo = 4;
 
 const char* ssid = ""; // no need to fill in
-const char* password = "password";
+const char* password = "Kh0Of1@.DArwz@";
 const char* ntpServer = "pool.ntp.org";
 
 // Off-sets for time, and summertime. each hour is 3.600 seconds.
@@ -49,10 +49,10 @@ const String device_name = "Tgrow_HIGrow"; // Can be changed, but not necessary,
 #define uS_TO_S_FACTOR 1000000ULL //Conversion factor for micro seconds to seconds
 #define TIME_TO_SLEEP  3600       //Time ESP32 will go to sleep (in seconds)
 
-const char broker[] = "192.168.1.64";
+const char broker[] = "homeMgr";
 int        port     = 1883;
-const char mqttuser[] = ""; //add eventual mqtt username
-const char mqttpass[] = ""; //add eventual mqtt password
+const char mqttuser[] = "waterbug"; //add eventual mqtt username
+const char mqttpass[] = "get3Water"; //add eventual mqtt password
 
 // *******************************************************************************************************************************
 // END userdefined data
