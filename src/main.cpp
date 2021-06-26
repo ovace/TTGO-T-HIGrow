@@ -1,75 +1,59 @@
+// Start Subroutines
 #include <Arduino.h>
 #include <Wire.h>
 #include <BH1750.h>
 #include <DHT.h>
 #include <Adafruit_BME280.h>
-#include <WiFi.h>
-#include <NTPClient.h>
 #include <ArduinoJson.h>
 #include <SD.h>
 #include <SPI.h>
-#include <PubSubClient.h>
 #include <ESP.h>
+
+#if defined(ESP8266)
+  #include <ESP8266WiFi.h>  
+  #include <WiFiClient.h>
+  #include <ESP8266mDNS.h>
+  #include <LITTLEFS.h>
+#elif defined(ESP32)
+  #include <WiFi.h>  
+  // Logfile on SPIFFS
+  #include "SPIFFS.h"
+#else
+  #error Invalid platform
+#endif 
 
 #include "driver/adc.h"
 #include <esp_wifi.h>
 #include <esp_bt.h>
-#include "user-variables.h"
 
-// Logfile on SPIFFS
-#include "SPIFFS.h"
+#include "read-sensors.h"
+extern espReadSensor readsensor;
+#include <config.h>
+#include <getCfg.h>
+espCFG mycfg;
+#include <go-to-deep-sleep.h>
+extern go2Sleep go2sleep;
+#include <get-string-value.h>
+#include <save-configuration.h>
+extern saveCfg savecfg;
+#include <connect-to-network.h>
+extern espNWconn espnwconn;
+#include <file-management.h>
+extern espFileMgmt espfilemgmt;
+#include <time-management.h>
+extern timeMgmt timemgmt;
 
-//           rel = "2.0;    // Implemented MAC id as unique identifier for the device, at same time device_name is frozen to Tgrow_HIGrow.
-//           rel = "2.0.1"; // Implemented "_" + name index for sensor icon. Corrected missing leading zero in HEX address.
-//           rel = "2.0.2"; // Implemented automatic search for feaseable WIFI SSID, and connect to this.
-//           rel = "3.0.0"; // Implemented Home-Assistant MQTT Autodiscover.
-//           rel = "3.0.1"; // Implemented Home-Assistant MQTT Autodiscover, Salt calibration and advice included.
-//           rel = "3.0.2"; // DST switch over now works
-//           rel = "3.0.3"; // Small error corrections
-//           rel = "3.0.4"; // Adapting to HACS frontend card: Battery State Card
-//           rel = "3.0.5"; // Implemented name of plant saved to SPIFFS
-//           rel = "3.0.6"; // DST calculation was way wrong, corrected now.
-//           rel = "4.0.0"; // Changed from Arduino EDI to VS Code - PlatformIO
-//           rel = "4.0.1"; // Error correction in connect network
-const String rel = "4.0.2"; // Organising subroutines, and functional code snippets.
 
-// mqtt constants
-WiFiClient wifiClient;
-PubSubClient mqttClient(wifiClient);
+static String code_rel = "0.01 "; // ESP sensor project
 
 // Reboot counters
-RTC_DATA_ATTR int bootCount = 0;
-RTC_DATA_ATTR int sleep5no = 0;
-
-
-//json construct setup
-struct Config {
-  String date;
-  String time;
-  int bootno;
-  int sleep5no;
-  float lux;
-  float temp;
-  float humid;
-  float soil;
-  float salt;
-  String saltadvice;
-  float bat;
-  String batcharge;
-  float batvolt;
-  float batvoltage;
-  String rel;
-};
-Config config;
-
-const int led = 13;
+static RTC_DATA_ATTR int bootCount = 0;  
+static RTC_DATA_ATTR int sleep5no = 0;
+static const int led = 13;
 
 #define I2C_SDA             25
 #define I2C_SCL             26
-#define DHT_PIN             16
-#define BAT_ADC             33
-#define SALT_PIN            34
-#define SOIL_PIN            32
+// #define DHT_PIN             16
 #define BOOT_PIN            0
 #define POWER_CTRL          4
 #define USER_BUTTON         35
@@ -77,52 +61,76 @@ const int led = 13;
 BH1750 lightMeter(0x23); //0x23
 Adafruit_BME280 bmp;     //0x77 Adafruit_BME280 is technically not used, but if removed the BH1750 will not work - Any suggestions why, would be appriciated.
 
-DHT dht(DHT_PIN, DHT_TYPE);
+// DHT dht(config.dhtcfg.pin, config.dhtcfg.type);
+DHT dht(DHTPIN, DHTTYPE);
 
-WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP);
-String formattedDate;
-String dayStamp;
-String timeStamp1;
-
-bool bme_found = false;
-
-// Start Subroutines
-#include <file-management.h>
-#include <go-to-deep-sleep.h>
-#include <get-string-value.h>
-#include <read-sensors.h>
-#include <save-configuration.h>
-#include <connect-to-network.h>
+static bool bme_found = false;
 
 void setup() {
-  Serial.begin(115200);
-  Serial.println("Void Setup");
+  Serial.println("Void Setup");  
+  
+  mycfg.loadConfiguration();  
 
-  #include <module-parameter-management.h>
+  int _espbaud = config.serialcomcfg.espbaud;
+  if(_espbaud <= 0){ _espbaud = 115200;};
+
+  Serial.begin(_espbaud);
+
+  if ( _DEBUG_ ) {
+    Serial.setDebugOutput(true);
+    Serial.println();
+
+    Serial.println(F("Main Debug info"));
+    mycfg.printFile(); 
+    mycfg.printCFG();  
+
+    Serial.printf("retry counter: %d\n", config.wirelesscfg.connRetries);
+
+    Serial.printf("Enable OTA: %s\n", doOTA?"Yes":"No");
+    Serial.printf("MQTT: %s\n", doMQTT?"Yes":"No");
+    Serial.printf("WebSvr: %s\n", doWebSvr?"Yes":"No");
+    Serial.printf("Temperature: %s\n", snsTemp?"Yes":"No");
+    Serial.printf("Humidity: %s\n", snsHumid?"Yes":"No");
+    Serial.printf("Light: %s\n", snsLux?"Yes":"No");
+    Serial.printf("Soil_Moisture: %s\n", snsSoilMoist?"Yes":"No");
+    Serial.printf("Soil_salt: %s\n", snsSoilSlt?"Yes":"No");
+    Serial.printf("Battery: %s\n", snsBatt?"Yes":"No");
+    Serial.printf("Level: %s\n", snsLvl?"Yes":"No");
+    Serial.printf("Water: %s\n", snsWater?"Yes":"No");
+  }
 
   // Start WiFi and update time
-  connectToNetwork();
+  espnwconn.connectToNetwork();
   Serial.println(" ");
   Serial.println("Connected to network");
+ 
   if (logging) {
-    writeFile(SPIFFS, "/error.log", "Connected to network \n");
-  }
+    espfilemgmt.writeFile(SPIFFS, "/error.log", "Connected to network \n");
+  } 
+ 
 
   Serial.println(WiFi.macAddress());
   Serial.println(WiFi.localIP());
-  //  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  // configTime(gmtOffset_sec, 0, config.ntpcfg.Server.c_str());
   //  timeClient.setTimeOffset(7200);
+  timemgmt.setupespTimeMgmt();
+  timemgmt.showTime();
+  timemgmt.getDate();
+  timemgmt.getTime();
 
   Wire.begin(I2C_SDA, I2C_SCL);
+  
   if (logging) {
-    writeFile(SPIFFS, "/error.log", "Wire Begin OK! \n");
-  }
+    espfilemgmt.writeFile(SPIFFS, "/error.log", "Wire Begin OK! \n");
+  } 
+ 
 
   dht.begin();
+  
   if (logging) {
-    writeFile(SPIFFS, "/error.log", "DHT12 Begin OK! \n");
-  }
+    espfilemgmt.writeFile(SPIFFS, "/error.log", "DHT12 Begin OK! \n");
+  } 
+  
 
   //! Sensor power control pin , use deteced must set high
   pinMode(POWER_CTRL, OUTPUT);
@@ -146,15 +154,23 @@ void setup() {
   Serial.print("lux ");
   Serial.println(luxRead);
   delay(2000);
-  float t12 = dht.readTemperature(); // Read temperature as Fahrenheit then dht.readTemperature(true)
-  config.temp = t12;
+  float t12 = dht.readTemperature(true); // Read temperature as Centigrade then dht.readTemperature()
+  config.sensorcfg.temp = t12;
+  Serial.print("temp *F: ");
+  Serial.println(t12);
   delay(2000);
   float h12 = dht.readHumidity();
-  config.humid = h12;
-  uint16_t soil = readSoil();
-  config.soil = soil;
-  uint32_t salt = readSalt();
-  config.salt = salt;
+  config.sensorcfg.humid = h12;
+  Serial.print("Humid %: ");
+  Serial.println(h12);
+  uint16_t soil = readsensor.readSoil();
+  config.sensorcfg.soil = soil;
+  Serial.print("Soil: ");
+  Serial.println(soil);
+  uint32_t salt = readsensor.readSalt();
+  config.sensorcfg.salt = salt;
+  Serial.print("Salt: ");
+  Serial.println(salt);
   String advice;
   if (salt < 201) {
     advice = "needed";
@@ -169,43 +185,42 @@ void setup() {
     advice = "too high";
   }
   Serial.println (advice);
-  config.saltadvice = advice;
+  config.sensorcfg.saltadvice = advice;
 
 
 
-  float bat = readBattery();
-  config.bat = bat;
-  config.batcharge = "";
+  float bat = readsensor.readBattery();
+  config.sensorcfg.bat = bat;
+  Serial.print("Batt: ");
+  Serial.println(bat);
+  config.sensorcfg.batcharge = "";
   if (bat > 130) {
-    config.batcharge = "charging";
+    config.sensorcfg.batcharge = "charging";
   }
 
   if (bat > 100) {
-    config.bat = 100;
+    config.sensorcfg.bat = 100;
   }
   
-  config.bootno = bootCount;
+  config.sensorcfg.bootno = bootCount;
+  Serial.print("Boot Count: ");
+  Serial.println(bootCount);
 
 
   luxRead = lightMeter.readLightLevel();
   Serial.print("lux ");
   Serial.println(luxRead);
-  config.lux = luxRead;
-  config.rel = rel;
-
-  timeClient.setTimeOffset(gmtOffset_sec);
-  while (!timeClient.update()) {
-    timeClient.forceUpdate();
-  }
-
-  #include <time-management.h>
+  config.sensorcfg.lux = luxRead;
+  config.sensorcfg.code_rel = code_rel;
 
   // Create JSON file
   Serial.println(F("Creating JSON document..."));
+ 
   if (logging) {
-    writeFile(SPIFFS, "/error.log", "Creating JSON document...! \n");
-  }
-  saveConfiguration(config);
+    espfilemgmt.writeFile(SPIFFS, "/error.log", "Creating JSON document...! \n");
+  } 
+  
+  savecfg.saveConfiguration(config);
 
   // Go to sleep
   //Increment boot number and print it every reboot
@@ -214,7 +229,8 @@ void setup() {
 
   //Go to sleep now
   delay(1000);
-  goToDeepSleep();
+  go2sleep.goToDeepSleep(config.timerscfg.TIME_TO_SLEEP);
+  
 }
 
 void loop() {
