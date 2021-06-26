@@ -8,8 +8,6 @@
 
 #if defined(ESP8266)
   #include <ESP8266WiFi.h>  
-  #include <WiFiClient.h>
-  #include <ESP8266mDNS.h>
   #include <LITTLEFS.h>
 #elif defined(ESP32)
   #include <WiFi.h>   
@@ -21,13 +19,11 @@
 #include <time.h>
 
 #include "config.h"
-#include "getCfg.h"
-extern espCFG mycfg;
 
 #include "time-management.h"
 
 /* Configuration of NTP */
-#define MY_NTP_SERVER "at.pool.ntp.org"           
+#define MY_NTP_SERVER "pool.ntp.org"           
 #define MY_TZ "CET-1CEST,M3.5.0/02,M10.5.0/03"   
 const char* Timezone = "GMT0BST,M3.5.0/01,M10.5.0/02";       // UK
 
@@ -53,24 +49,44 @@ struct tm tminfo;                              // the structure tminfo holds tim
 
 
 timeMgmt::timeMgmt() { //Class constructor
+  configTime(0, 0, MY_NTP_SERVER, "time.nist.gov");
 };
 timeMgmt::~timeMgmt() { //Class destructor
 };
 
-void timeMgmt::setupespTimeMgmt(){
-  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
-  // setenv("TZ", Timezone, 1);
-  Time_format = "M"; // or StartTime("I"); for Imperial 12:00 PM format and Date format MM-DD-CCYY e.g. 12:30PM 31-Mar-2019
-
+boolean timeMgmt::setupespTimeMgmt(){
+  // configTime(gmtOffset_sec, daylightOffset_sec, ntpServer, "time.nist.gov"); //(gmtOffset_sec, daylightOffset_sec, ntpServer)
+  configTime(0, 0, MY_NTP_SERVER, "time.nist.gov");
+  
+  Time_format = "M"; // or StartTime("I"); for Imperial 12:00 PM format and Date format MM-DD-CCYY e.g. 12:30PM 31-Mar-2019 
+  
+  // setenv("TZ", Timezone, 1);  //setenv()adds the "TZ" variable to the environment with a value TimeZone, only used if set to 1, 0 means no change
+  // tzset(); // Set the TZ environment variable
+  delay(100);
+  bool TimeStatus = UpdateLocalTime(Time_format);
+  return TimeStatus;
 };
+
 void timeMgmt::getTimeMgmtCfg(){
 
 };
-void timeMgmt::getTime(){
+/* void timeMgmt::getTime(){
   UpdateLocalTime(Time_format);
   Serial.println(Time_str);
   Serial.println();
+}; */
+  // Function that gets current epoch time
+unsigned long timeMgmt::getTime() {
+  // time_t now;
+  // struct tm timeinfo;
+  if (!getLocalTime(&tminfo, 5000)) {
+    Serial.println("Failed to obtain time");
+    return(0);
+  }
+  time(&now);
+  return now;
 };
+
 void timeMgmt::getDate(){
   UpdateLocalTime(Time_format);
   Serial.println(Date_str);  
@@ -106,8 +122,8 @@ void timeMgmt::showTime() {
   Serial.println();
 }
 
-void timeMgmt::UpdateLocalTime(String Format){
-  time_t now;
+boolean timeMgmt::UpdateLocalTime(String Format){
+ /*  time_t now;
   time(&now);
   //See http://www.cplusplus.com/reference/ctime/strftime/
   char hour_output[30], day_output[30];
@@ -118,10 +134,30 @@ void timeMgmt::UpdateLocalTime(String Format){
   else {
     strftime(day_output, 30, "%a  %m-%d-%y", localtime(&now)); // Formats date as: Sat Jun-24-17
     strftime(hour_output, 30, "%r", localtime(&now));          // Formats time as: 2:05:49pm
+  } */
+
+
+
+  char   time_output[30], day_output[30], update_time[30];
+  while (!getLocalTime(&tminfo, 5000)) { // Wait for 5-sec for time to synchronise
+    Serial.println("Failed to obtain time");
+    return false;
   }
+  int CurrentHour = tminfo.tm_hour;
+  int CurrentMin  = tminfo.tm_min;
+  int CurrentSec  = tminfo.tm_sec;
+  //See http://www.cplusplus.com/reference/ctime/strftime/
+  //Serial.println(&timeinfo, "%a %b %d %Y   %H:%M:%S");      // Displays: Saturday, June 24 2017 14:05:49
+  
+  sprintf(day_output, "%s  %02u-%s-%04u", tminfo.tm_wday, tminfo.tm_mday, tminfo.tm_mon, (tminfo.tm_year) + 1900);
+  strftime(day_output, sizeof(day_output), "%a %b-%d-%Y", &tminfo); // Creates  'Sat May-31-2019'
+  strftime(update_time, sizeof(update_time), "%r", &tminfo);        // Creates: '02:05:49pm'
+  sprintf(time_output, "%s", update_time);
+  
   Date_str = day_output;
   config.sensorcfg.date = Date_str;
-  
-  Time_str = hour_output;
+  Time_str = time_output;
   config.sensorcfg.time = Time_str;
-}
+  return true;
+
+};

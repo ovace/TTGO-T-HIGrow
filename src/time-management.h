@@ -8,14 +8,15 @@ class timeMgmt {
     public:
         timeMgmt();
         ~timeMgmt();            
-        static void setupespTimeMgmt();
+        static boolean setupespTimeMgmt();
         static void getTimeMgmtCfg();
-        static void getTime();
+        // static void getTime();
+        static unsigned long getTime();
         static void getDate();
         static void getTimeStamp();
         static void showTime();
     private:
-        static void UpdateLocalTime(String Format); 
+        static boolean UpdateLocalTime(String Format); 
 
 };      
 #endif /* _timeMgmt_H */

@@ -116,7 +116,12 @@ void setup() {
   timemgmt.setupespTimeMgmt();
   timemgmt.showTime();
   timemgmt.getDate();
-  timemgmt.getTime();
+  
+  // Variable to save current epoch time
+  unsigned long epochTime; 
+  epochTime = timemgmt.getTime();
+  Serial.print("Epoch Time: ");
+  Serial.println(epochTime);
 
   Wire.begin(I2C_SDA, I2C_SCL);
   
