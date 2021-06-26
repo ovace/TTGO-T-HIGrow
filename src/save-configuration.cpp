@@ -20,6 +20,8 @@
 #endif 
 
 #include "config.h"
+// #include "espMQTT-WiFi.h"
+// espMQTT espmqtt;
 
 #include "file-management.h"
 extern espFileMgmt espfilemgmt;
@@ -74,6 +76,7 @@ void saveCfg::saveConfiguration(const GlobalConfig  & config) {
   Serial.println(topic);
   Serial.print("ssid: ");
   Serial.println(config.wirelesscfg.ssid.c_str());
+ 
   StaticJsonDocument<1024> doc;
   // Set the values in the document
   // Device changes according to device placement
@@ -100,7 +103,7 @@ void saveCfg::saveConfiguration(const GlobalConfig  & config) {
   plant["code.rel"] = config.sensorcfg.code_rel;
 
   // Send to mqtt
-  char buffer[2048];
+  char buffer[1024];
   serializeJson(doc, buffer);
 
 
@@ -113,6 +116,12 @@ void saveCfg::saveConfiguration(const GlobalConfig  & config) {
   Serial.println(buffer);
 
   // Connect to mqtt broker
+
+  // // if (doMQTT ) {
+  //   Serial.println(F("Enabling MQTT"));
+  //   espmqtt.mqttSetup();  
+  // // }
+
   Serial.print("Attempting to connect to the MQTT broker: ");
   Serial.println(config.mqttcfg.server);
   if (logging) {
@@ -140,14 +149,27 @@ void saveCfg::saveConfiguration(const GlobalConfig  & config) {
   Serial.println();
 
   bool retained = true;
+  mqttClient.setBufferSize(1024);
 
-  // if (mqttClient.publish(topic, buffer, retained)) {
-  if (mqttClient.publish(topic, "Test Message", retained)) {
+  if (mqttClient.publish(topic, buffer, retained)) {
     Serial.println("Message published successfully");
   } else {
     Serial.println("Error in Message, not published");
     go2sleep.goToDeepSleepFiveMinutes();
   }
   Serial.println();
+
+  // // if (doMQTT) {
+
+  //   bool retained = true;
+  //   int qos = 0;
+  //   Serial.println("Publishing to MQTT");
+  //   // Publish an MQTT message on topic esp/dht/temperature
+  //   uint16_t mqttPacket = espmqtt.mqttpub(topic, "test message");
+  //   // uint16_t mqttPacket = espmqtt.mqttpub(topic, buffer);
+  //   Serial.println("mqtt packet: " + mqttPacket);
+  // // };
+
+  yield();
 }
 

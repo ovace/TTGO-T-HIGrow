@@ -23,7 +23,9 @@
 #include "time-management.h"
 
 /* Configuration of NTP */
-#define MY_NTP_SERVER "pool.ntp.org"           
+#define MY_NTP_SERVER_1 "pool.ntp.org" 
+#define MY_NTP_SERVER_2 "time.nist.gov"     
+
 #define MY_TZ "CET-1CEST,M3.5.0/02,M10.5.0/03"   
 const char* Timezone = "GMT0BST,M3.5.0/01,M10.5.0/02";       // UK
 
@@ -49,14 +51,14 @@ struct tm tminfo;                              // the structure tminfo holds tim
 
 
 timeMgmt::timeMgmt() { //Class constructor
-  configTime(0, 0, MY_NTP_SERVER, "time.nist.gov");
+  configTime(0, 0, MY_NTP_SERVER_1);
 };
 timeMgmt::~timeMgmt() { //Class destructor
 };
 
 boolean timeMgmt::setupespTimeMgmt(){
   // configTime(gmtOffset_sec, daylightOffset_sec, ntpServer, "time.nist.gov"); //(gmtOffset_sec, daylightOffset_sec, ntpServer)
-  configTime(0, 0, MY_NTP_SERVER, "time.nist.gov");
+  configTime(0, 0, MY_NTP_SERVER_1);
   
   Time_format = "M"; // or StartTime("I"); for Imperial 12:00 PM format and Date format MM-DD-CCYY e.g. 12:30PM 31-Mar-2019 
   
@@ -79,7 +81,7 @@ void timeMgmt::getTimeMgmtCfg(){
 unsigned long timeMgmt::getTime() {
   // time_t now;
   // struct tm timeinfo;
-  if (!getLocalTime(&tminfo, 5000)) {
+  if (!getLocalTime(&tminfo, 10000)) {
     Serial.println("Failed to obtain time");
     return(0);
   }

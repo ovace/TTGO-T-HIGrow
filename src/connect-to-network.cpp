@@ -12,6 +12,7 @@
   #include <LITTLEFS.h>
 #elif defined(ESP32)
   #include <WiFi.h>   
+  #include <mdns.h>
   #include "SPIFFS.h" 
 #else
   #error Invalid platform
@@ -46,6 +47,8 @@ void espNWconn::connectToNetwork() {
   Serial.println(config.wirelesscfg.ssid.c_str());
   // Serial.print("Size of PSK ");
   // Serial.println(config.wirelesscfg.psk);
+
+  static String HOST_NAME = config.wirelesscfg.hostname;
 
   WiFi.mode(WIFI_STA);
   // WiFi.begin(config.wirelesscfg.ssid.c_str(), config.wirelesscfg.psk);
@@ -96,4 +99,6 @@ void espNWconn::connectToNetwork() {
   if (WiFi.status() !=  WL_CONNECTED) {
     go2sleep.goToDeepSleepFiveMinutes();
   }
+
+  mdns_hostname_set(HOST_NAME.c_str());
 }
