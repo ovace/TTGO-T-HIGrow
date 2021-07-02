@@ -118,10 +118,15 @@ void setup() {
   timemgmt.getDate();
   
   // Variable to save current epoch time
-  unsigned long epochTime; 
-  epochTime = timemgmt.getTime();
+  static unsigned long epochTime = timemgmt.getEpochTime();
+  static String formattedTime = timemgmt.getFormattedTime();
+
   Serial.print("Epoch Time: ");
   Serial.println(epochTime);
+
+  Serial.print("Formatted Time: ");
+  Serial.println(formattedTime);
+
 
   Wire.begin(I2C_SDA, I2C_SCL);
   

@@ -11,12 +11,14 @@ class timeMgmt {
         static boolean setupespTimeMgmt();
         static void getTimeMgmtCfg();
         // static void getTime();
-        static unsigned long getTime();
+        static unsigned long getEpochTime();
+        static String getFormattedTime();
         static void getDate();
         static void getTimeStamp();
         static void showTime();
     private:
-        static boolean UpdateLocalTime(String Format); 
+        boolean UpdateLocalTime(String Format); 
+        void getNTP(const long utcOffsetInSeconds);
 
 };      
 #endif /* _timeMgmt_H */

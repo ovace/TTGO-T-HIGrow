@@ -13,7 +13,7 @@
 #elif defined(ESP32)
   #include <WiFi.h>   
   #include <mdns.h>
-  #include "SPIFFS.h" 
+  #include "SPIFFS.h"   
 #else
   #error Invalid platform
 #endif 
@@ -99,6 +99,8 @@ void espNWconn::connectToNetwork() {
   if (WiFi.status() !=  WL_CONNECTED) {
     go2sleep.goToDeepSleepFiveMinutes();
   }
-
+#ifdef ESP32
   mdns_hostname_set(HOST_NAME.c_str());
+#endif
+  
 }

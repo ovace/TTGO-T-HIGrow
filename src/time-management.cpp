@@ -4,7 +4,7 @@
 
 */
 #include <Arduino.h>
-#include <NTPClient.h>
+#include <time.h>
 
 #if defined(ESP8266)
   #include <ESP8266WiFi.h>  
@@ -16,11 +16,11 @@
   #error Invalid platform
 #endif
 
-#include <time.h>
-
 #include "config.h"
-
 #include "time-management.h"
+
+timeMgmt timemgmt;
+
 
 /* Configuration of NTP */
 #define MY_NTP_SERVER_1 "pool.ntp.org" 
@@ -41,56 +41,79 @@ const char* Timezone = "GMT0BST,M3.5.0/01,M10.5.0/02";       // UK
 //const char* Timezone = "EET-2EEST,M3.5.5/0,M10.5.5/0";     // Asia
 //const char* Timezone = "ACST-9:30ACDT,M10.1.0,M4.1.0/3":   // Australia
 
-String Date_str, Time_str, Time_format;
+String Date_str, Time_str;
 
+String Time_format = "M"; // or StartTime("I"); for Imperial 12:00 PM format and Date format MM-DD-CCYY e.g. 12:30PM 31-Mar-2019 
 
 /* Globals */
 time_t now;                         // this is the epoch
-struct tm tminfo;                              // the structure tminfo holds time information in a more convient way
+struct tm tminfo;                   // the structure tminfo holds time information in a more convient way
 
 
 
-timeMgmt::timeMgmt() { //Class constructor
-  configTime(0, 0, MY_NTP_SERVER_1);
+timeMgmt::timeMgmt() { //Class constructor  
 };
 timeMgmt::~timeMgmt() { //Class destructor
 };
 
 boolean timeMgmt::setupespTimeMgmt(){
-  // configTime(gmtOffset_sec, daylightOffset_sec, ntpServer, "time.nist.gov"); //(gmtOffset_sec, daylightOffset_sec, ntpServer)
+    // configTime(gmtOffset_sec, daylightOffset_sec, ntpServer, "time.nist.gov"); //(gmtOffset_sec, daylightOffset_sec, ntpServer)
   configTime(0, 0, MY_NTP_SERVER_1);
-  
-  Time_format = "M"; // or StartTime("I"); for Imperial 12:00 PM format and Date format MM-DD-CCYY e.g. 12:30PM 31-Mar-2019 
   
   // setenv("TZ", Timezone, 1);  //setenv()adds the "TZ" variable to the environment with a value TimeZone, only used if set to 1, 0 means no change
   // tzset(); // Set the TZ environment variable
   delay(100);
-  bool TimeStatus = UpdateLocalTime(Time_format);
+  bool TimeStatus = timemgmt.UpdateLocalTime(Time_format);
   return TimeStatus;
 };
 
 void timeMgmt::getTimeMgmtCfg(){
 
 };
-/* void timeMgmt::getTime(){
-  UpdateLocalTime(Time_format);
-  Serial.println(Time_str);
-  Serial.println();
-}; */
-  // Function that gets current epoch time
-unsigned long timeMgmt::getTime() {
-  // time_t now;
-  // struct tm timeinfo;
+
+// Function that gets current epoch time
+unsigned long timeMgmt::getEpochTime() {
+ #if defined(ESP8266)
+  // if (!getEpochTime(&tminfo, 10000)) {
+  //   Serial.println("Failed to obtain time");
+  //   return(0);
+  // }
+#elif defined(ESP32)
   if (!getLocalTime(&tminfo, 10000)) {
     Serial.println("Failed to obtain time");
     return(0);
   }
+#endif
+  
   time(&now);
   return now;
 };
 
+String timeMgmt::getFormattedTime() {
+  // timemgmt.getNTP(0);
+
+  // timeClient.update();
+  // // char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+  // // Serial.print(daysOfTheWeek[timeClient.getDay()]);
+  // // Serial.print(", ");
+  // // Serial.print(timeClient.getHours());
+  // // Serial.print(":");
+  // // Serial.print(timeClient.getMinutes());
+  // // Serial.print(":");
+  // // Serial.println(timeClient.getSeconds());
+  
+  // String formattedTime = timeClient.getFormattedTime();
+  // Serial.println(formattedTime);
+
+  // timeClient.end();
+
+  // return formattedTime;
+
+  return "Done";
+};
+
 void timeMgmt::getDate(){
-  UpdateLocalTime(Time_format);
+  timemgmt.UpdateLocalTime(Time_format);
   Serial.println(Date_str);  
   Serial.println();
 
@@ -100,7 +123,7 @@ void timeMgmt::getTimeStamp(){
 };
 
 void timeMgmt::showTime() {
-  // UpdateLocalTime(Time_format);
+  timemgmt.UpdateLocalTime(Time_format);
   time(&now);                       // read the current time
   localtime_r(&now, &tminfo);           // update the structure tminfo with the current time
   Serial.print("year:");
@@ -121,11 +144,11 @@ void timeMgmt::showTime() {
     Serial.print("\tDST");
   else
     Serial.print("\tstandard");
-  Serial.println();
+  Serial.println();  
 }
 
 boolean timeMgmt::UpdateLocalTime(String Format){
- /*  time_t now;
+  time_t now;
   time(&now);
   //See http://www.cplusplus.com/reference/ctime/strftime/
   char hour_output[30], day_output[30];
@@ -136,15 +159,22 @@ boolean timeMgmt::UpdateLocalTime(String Format){
   else {
     strftime(day_output, 30, "%a  %m-%d-%y", localtime(&now)); // Formats date as: Sat Jun-24-17
     strftime(hour_output, 30, "%r", localtime(&now));          // Formats time as: 2:05:49pm
-  } */
+  }
+  
+  char   time_output[30], update_time[30];
 
-
-
-  char   time_output[30], day_output[30], update_time[30];
+  #if defined(ESP8266)
+    // while (!getEpochTime(&tminfo, 5000)) { // Wait for 5-sec for time to synchronise
+    //   Serial.println("Failed to obtain time");
+    //   return false;
+    // }
+#elif defined(ESP32)
   while (!getLocalTime(&tminfo, 5000)) { // Wait for 5-sec for time to synchronise
     Serial.println("Failed to obtain time");
     return false;
   }
+#endif
+  
   int CurrentHour = tminfo.tm_hour;
   int CurrentMin  = tminfo.tm_min;
   int CurrentSec  = tminfo.tm_sec;
@@ -161,5 +191,23 @@ boolean timeMgmt::UpdateLocalTime(String Format){
   Time_str = time_output;
   config.sensorcfg.time = Time_str;
   return true;
+
+};
+
+void timeMgmt::getNTP(const long utcOffsetInSeconds){
+  if (WiFi.status() == WL_CONNECTED) {
+  // Initialize a NTPClient to get time
+  // timeClient.begin();
+  // Set offset time in seconds to adjust for your timezone, for example:
+  // GMT +1 = 3600
+  // GMT +8 = 28800
+  // GMT -1 = -3600
+  // GMT 0 = 0
+  // timeClient.setTimeOffset(utcOffsetInSeconds);
+  // } else {
+  //   Serial.println("WiFi not connected");
+  };   
+  
+  Serial.println();
 
 };
