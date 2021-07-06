@@ -70,13 +70,13 @@ void saveCfg::saveConfiguration(const GlobalConfig  & config) {
   }
   Serial.println("chipId " + chipId);
 
-  const String topicStr = config.mqttcfg.home_topic_base + "/" + chipId;
+  const String topicStr = config.mqttcfg.home_topic_base + "/" + config.devicecfg.place + "/" + config.devicecfg.name + "/" + config.devicecfg.location + "/" + chipId;
   const char* topic = topicStr.c_str();
   Serial.print("topic: ");
   Serial.println(topic);
   Serial.print("ssid: ");
   Serial.println(config.wirelesscfg.ssid.c_str());
- 
+
   StaticJsonDocument<1024> doc;
   // Set the values in the document
   // Device changes according to device placement
@@ -87,6 +87,7 @@ void saveCfg::saveConfiguration(const GlobalConfig  & config) {
   plant["sensorname"] = config.devicecfg.name;
   plant["date"] = config.sensorcfg.date;
   plant["time"] = config.sensorcfg.time;
+  plant["tz"] = config.sensorcfg.tz;
   plant["sleep5Count"] = config.sensorcfg.sleep5no;
   plant["bootCount"] = config.sensorcfg.bootno;
   plant["lux"] = config.sensorcfg.lux;

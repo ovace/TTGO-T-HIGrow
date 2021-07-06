@@ -1,6 +1,6 @@
 // Start Subroutines
 #include <Arduino.h>
-#include <Wire.h>
+// #include <Wire.h>
 #include <BH1750.h>
 #include <DHT.h>
 #include <Adafruit_BME280.h>
@@ -42,7 +42,6 @@ extern espNWconn espnwconn;
 extern espFileMgmt espfilemgmt;
 #include <time-management.h>
 extern timeMgmt timemgmt;
-
 
 static String code_rel = "0.01 "; // ESP sensor project
 
@@ -101,7 +100,7 @@ void setup() {
 
   // Start WiFi and update time
   espnwconn.connectToNetwork();
-  Serial.println(" ");
+  Serial.println("");
   Serial.println("Connected to network");
  
   if (logging) {
@@ -111,41 +110,31 @@ void setup() {
 
   Serial.println(WiFi.macAddress());
   Serial.println(WiFi.localIP());
-  // configTime(gmtOffset_sec, 0, config.ntpcfg.Server.c_str());
-  //  timeClient.setTimeOffset(7200);
-  timemgmt.setupespTimeMgmt();
-  timemgmt.showTime();
-  timemgmt.getDate();
   
-  // Variable to save current epoch time
-  static unsigned long epochTime = timemgmt.getEpochTime();
-  static String formattedTime = timemgmt.getFormattedTime();
-
-  Serial.print("Epoch Time: ");
-  Serial.println(epochTime);
-
-  Serial.print("Formatted Time: ");
-  Serial.println(formattedTime);
-
-
+  Serial.println("Getting date and time");
+  timemgmt.showTime();
+  config.ntpcfg.timeZone = "CST6CDT,M3.2.0,M11.1.0";
+  config.sensorcfg.time = timemgmt.getLocalTzTime("M");
+  config.sensorcfg.date = timemgmt.getLocalTzDate("M");
+  config.sensorcfg.tz = config.ntpcfg.timeZone;
+  Serial.println("Tz: " + config.ntpcfg.timeZone);
+  
   Wire.begin(I2C_SDA, I2C_SCL);
   
   if (logging) {
     espfilemgmt.writeFile(SPIFFS, "/error.log", "Wire Begin OK! \n");
   } 
  
-
   dht.begin();
   
   if (logging) {
     espfilemgmt.writeFile(SPIFFS, "/error.log", "DHT12 Begin OK! \n");
   } 
   
-
   //! Sensor power control pin , use deteced must set high
   pinMode(POWER_CTRL, OUTPUT);
   digitalWrite(POWER_CTRL, 1);
-  delay(1000);
+  delay(300);
 
   if (!bmp.begin()) {
     Serial.println(F("This check must be done, otherwise the BH1750 does not initiate!!!!?????"));
@@ -163,12 +152,12 @@ void setup() {
   float luxRead = lightMeter.readLightLevel();
   Serial.print("lux ");
   Serial.println(luxRead);
-  delay(2000);
+  delay(1000); // reducesd from 2000
   float t12 = dht.readTemperature(true); // Read temperature as Centigrade then dht.readTemperature()
   config.sensorcfg.temp = t12;
   Serial.print("temp *F: ");
   Serial.println(t12);
-  delay(2000);
+  delay(1000); // reducesd from 2000
   float h12 = dht.readHumidity();
   config.sensorcfg.humid = h12;
   Serial.print("Humid %: ");
@@ -197,8 +186,6 @@ void setup() {
   Serial.println (advice);
   config.sensorcfg.saltadvice = advice;
 
-
-
   float bat = readsensor.readBattery();
   config.sensorcfg.bat = bat;
   Serial.print("Batt: ");
@@ -215,7 +202,6 @@ void setup() {
   config.sensorcfg.bootno = bootCount;
   Serial.print("Boot Count: ");
   Serial.println(bootCount);
-
 
   luxRead = lightMeter.readLightLevel();
   Serial.print("lux ");
@@ -240,8 +226,10 @@ void setup() {
   //Go to sleep now
   delay(1000);
   go2sleep.goToDeepSleep(config.timerscfg.TIME_TO_SLEEP);
-  
+  yield();
 }
 
 void loop() {
+
+  yield();
 }

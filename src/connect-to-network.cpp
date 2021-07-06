@@ -30,7 +30,10 @@ extern espFileMgmt espfilemgmt;
 
 extern go2Sleep go2sleep;
 
+static String HOST_NAME;
+
 espNWconn::espNWconn() { //Class constructor
+  HOST_NAME = "Sensor-"+ config.devicecfg.location;
 };
 espNWconn::~espNWconn() { //Class destructor
 };
@@ -48,13 +51,17 @@ void espNWconn::connectToNetwork() {
   // Serial.print("Size of PSK ");
   // Serial.println(config.wirelesscfg.psk);
 
-  static String HOST_NAME = config.wirelesscfg.hostname;
+  // HOST_NAME = config.devicecfg.location+ "-"+config.wirelesscfg.hostname+ "-"+config.devicecfg.place;
+  HOST_NAME = "Sensor-"+ config.devicecfg.location;
+
+  Serial.println("Hostname: " + HOST_NAME);
 
   WiFi.mode(WIFI_STA);
   // WiFi.begin(config.wirelesscfg.ssid.c_str(), config.wirelesscfg.psk);
   const char* ssid = config.wirelesscfg.ssid.c_str(); // no need to fill in
   const char* password = config.wirelesscfg.psk;
   WiFi.begin(ssid, password);
+  WiFi.hostname(HOST_NAME);
   Serial.println("");
   bool breakLoop = false;
   if (logging) {
@@ -84,7 +91,7 @@ void espNWconn::connectToNetwork() {
         }
         ++UpCount;
         ++WLcount;
-        if (WLcount > 200) {
+        if (WLcount > 30) {
           Serial.println("we should break");
           breakLoop = true;
           break;
