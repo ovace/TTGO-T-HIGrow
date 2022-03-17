@@ -82,26 +82,26 @@ void saveCfg::saveConfiguration(const GlobalConfig  & config) {
   // Device changes according to device placement
   JsonObject root = doc.to<JsonObject>();
 
-  JsonObject plant = root.createNestedObject("plant");
-  plant[config.devicecfg.name] = chipId;
-  plant["sensorname"] = config.devicecfg.name;
-  plant["date"] = config.sensorcfg.date;
-  plant["time"] = config.sensorcfg.time;
-  plant["tz"] = config.sensorcfg.tz;
-  plant["sleep5Count"] = config.sensorcfg.sleep5no;
-  plant["bootCount"] = config.sensorcfg.bootno;
-  plant["lux"] = config.sensorcfg.lux;
-  plant["temp"] = config.sensorcfg.temp;
-  plant["humid"] = config.sensorcfg.humid;
-  plant["soil"] = config.sensorcfg.soil;
-  plant["salt"] = config.sensorcfg.salt;
-  plant["saltadvice"] = config.sensorcfg.saltadvice;
-  plant["bat"] = config.sensorcfg.bat;
-  plant["batcharge"] = config.sensorcfg.batcharge;
-  plant["battvolt"] = config.sensorcfg.batvolt;
-  plant["battvoltage"] = config.sensorcfg.batvoltage;
-  plant["wifissid"] = WiFi.SSID();
-  plant["code.rel"] = config.sensorcfg.code_rel;
+  JsonObject sensorReads = root.createNestedObject("sensorReads");
+  sensorReads[config.devicecfg.name] = chipId;
+  sensorReads["sensorname"] = config.devicecfg.name;
+  sensorReads["date"] = config.sensorcfg.date;
+  sensorReads["time"] = config.sensorcfg.time;
+  sensorReads["tz"] = config.sensorcfg.tz;
+  sensorReads["sleep5Count"] = config.sensorcfg.sleep5no;
+  sensorReads["bootCount"] = config.sensorcfg.bootno;
+  sensorReads["lux"] = config.sensorcfg.lux;
+  sensorReads["temp"] = config.sensorcfg.temp;
+  sensorReads["humid"] = config.sensorcfg.humid;
+  sensorReads["soil"] = config.sensorcfg.soil;
+  sensorReads["salt"] = config.sensorcfg.salt;
+  sensorReads["saltadvice"] = config.sensorcfg.saltadvice;
+  sensorReads["bat"] = config.sensorcfg.bat;
+  sensorReads["batcharge"] = config.sensorcfg.batcharge;
+  sensorReads["battvolt"] = config.sensorcfg.batvolt;
+  sensorReads["battvoltage"] = config.sensorcfg.batvoltage;
+  sensorReads["wifissid"] = WiFi.SSID();
+  sensorReads["code.rel"] = config.sensorcfg.code_rel;
 
   // Send to mqtt
   char buffer[1024];

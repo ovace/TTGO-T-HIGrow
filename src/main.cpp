@@ -53,6 +53,7 @@ static const int led = 13;
 #define I2C_SDA             25
 #define I2C_SCL             26
 // #define DHT_PIN             16
+// #define DHT_TYPE            DHT11
 #define BOOT_PIN            0
 #define POWER_CTRL          4
 #define USER_BUTTON         35
@@ -152,12 +153,12 @@ void setup() {
   float luxRead = lightMeter.readLightLevel();
   Serial.print("lux ");
   Serial.println(luxRead);
-  delay(1000); // reducesd from 2000
+  delay(2000); 
   float t12 = dht.readTemperature(true); // Read temperature as Centigrade then dht.readTemperature()
   config.sensorcfg.temp = t12;
   Serial.print("temp *F: ");
   Serial.println(t12);
-  delay(1000); // reducesd from 2000
+  delay(2000); 
   float h12 = dht.readHumidity();
   config.sensorcfg.humid = h12;
   Serial.print("Humid %: ");
